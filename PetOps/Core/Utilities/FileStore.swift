@@ -1,5 +1,4 @@
 import Foundation
-import UIKit
 
 enum FileStoreError: Error { case failedToWrite }
 
@@ -27,7 +26,11 @@ final class FileStore {
         }
     }
 
-    func read(path: String) -> Data? {
-        FileManager.default.contents(atPath: path)
+    func fileURL(path: String) -> URL {
+        URL(fileURLWithPath: path)
+    }
+
+    func delete(path: String) {
+        try? FileManager.default.removeItem(atPath: path)
     }
 }
