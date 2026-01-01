@@ -22,8 +22,18 @@
         <attribute name="currency" optional="YES" attributeType="String"/>
         <attribute name="expenseDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="totalAmount" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
         <attribute name="vendor" optional="YES" attributeType="String"/>
+        <relationship name="items" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ExpenseItem" inverseName="expense" inverseEntity="ExpenseItem"/>
         <relationship name="pet" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Pet" inverseName="expenses" inverseEntity="Pet"/>
+    </entity>
+    <entity name="ExpenseItem" representedClassName=".ExpenseItem" syncable="YES" codeGenerationType="class">
+        <attribute name="amount" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="quantity" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="title" optional="YES" attributeType="String"/>
+        <relationship name="expense" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Expense" inverseName="items" inverseEntity="Expense"/>
     </entity>
     <entity name="Pet" representedClassName="Pet" syncable="YES" codeGenerationType="class">
         <attribute name="birthDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>

@@ -1,10 +1,12 @@
 import Foundation
 
-enum DocKind: String {
+enum DocKind: String, CaseIterable, Identifiable {
     case receipt
     case vaccine
     case lab
     case other
+
+    var id: String { rawValue }
 }
 
 struct DocClassification {
@@ -17,24 +19,23 @@ enum DocClassifier {
     static func classify(ocr: String) -> DocClassification {
         let t = normalize(ocr)
 
-        // Receipt heuristics
         let receiptHits = score(t, terms: [
-            "total", "subtotal", "vat", "tax", "kwd", "kd", "visa", "mastercard", "invoice", "receipt", "cash", "amount"
+            "total", "subtotal", "vat", "tax", "kwd", " kd", "k.d", "visa", "mastercard", "invoice", "receipt", "cash", "amount"
         ])
 
-        // Vaccine heuristics
         let vaccineHits = score(t, terms: [
             "vaccine", "vaccination", "rabies", "fvr", "feline", "distemper", "parvo", "booster", "microchip", "date of vaccination"
         ])
 
-        // Lab heuristics
         let labHits = score(t, terms: [
             "lab", "laboratory", "cbc", "hematology", "biochemistry", "glucose", "creatinine", "alt", "ast", "result", "reference range"
         ])
 
         let maxHits = max(receiptHits, vaccineHits, labHits)
 
-        if maxHits == 0 { return .init(kind: .other, confidence: 0.2, reason: "No strong keywords") }
+        if maxHits == 0 {
+            return .init(kind: .other, confidence: 0.2, reason: "No strong keywords")
+        }
 
         if maxHits == receiptHits {
             return .init(kind: .receipt, confidence: min(0.95, 0.5 + Double(receiptHits) * 0.08), reason: "Receipt keywords")
