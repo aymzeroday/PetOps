@@ -5,7 +5,7 @@
         <attribute name="filePath" optional="YES" attributeType="String"/>
         <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
         <attribute name="kind" optional="YES" attributeType="String"/>
-        <relationship name="event" optional="YES" maxCount="1" deletionRule="No Action" destinationEntity="TimelineEvent" inverseName="attachments" inverseEntity="TimelineEvent"/>
+        <relationship name="event" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="TimelineEvent" inverseName="attachments" inverseEntity="TimelineEvent"/>
     </entity>
     <entity name="Document" representedClassName="Document" syncable="YES" codeGenerationType="class">
         <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
@@ -13,7 +13,7 @@
         <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
         <attribute name="ocrText" optional="YES" attributeType="String"/>
         <attribute name="type" optional="YES" attributeType="String"/>
-        <relationship name="pet" optional="YES" maxCount="1" deletionRule="No Action" destinationEntity="Pet" inverseName="documents" inverseEntity="Pet"/>
+        <relationship name="pet" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Pet" inverseName="documents" inverseEntity="Pet"/>
     </entity>
     <entity name="Expense" representedClassName="Expense" syncable="YES" codeGenerationType="class">
         <attribute name="amount" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
@@ -23,7 +23,7 @@
         <attribute name="expenseDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
         <attribute name="vendor" optional="YES" attributeType="String"/>
-        <relationship name="pet" optional="YES" maxCount="1" deletionRule="No Action" destinationEntity="Pet" inverseName="expenses" inverseEntity="Pet"/>
+        <relationship name="pet" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Pet" inverseName="expenses" inverseEntity="Pet"/>
     </entity>
     <entity name="Pet" representedClassName="Pet" syncable="YES" codeGenerationType="class">
         <attribute name="birthDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
@@ -34,6 +34,17 @@
         <relationship name="documents" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Document" inverseName="pet" inverseEntity="Document"/>
         <relationship name="events" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="TimelineEvent" inverseName="pet" inverseEntity="TimelineEvent"/>
         <relationship name="expenses" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Expense" inverseName="pet" inverseEntity="Expense"/>
+        <relationship name="reminderRules" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ReminderRule" inverseName="pet" inverseEntity="ReminderRule"/>
+    </entity>
+    <entity name="ReminderRule" representedClassName="ReminderRule" syncable="YES" codeGenerationType="class">
+        <attribute name="body" optional="YES" attributeType="String"/>
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="enabled" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="scheduleJSON" optional="YES" attributeType="String"/>
+        <attribute name="title" optional="YES" attributeType="String"/>
+        <relationship name="event" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="TimelineEvent" inverseName="reminderRules" inverseEntity="TimelineEvent"/>
+        <relationship name="pet" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Pet" inverseName="reminderRules" inverseEntity="Pet"/>
     </entity>
     <entity name="TimelineEvent" representedClassName="TimelineEvent" syncable="YES" codeGenerationType="class">
         <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
@@ -43,6 +54,7 @@
         <attribute name="title" optional="YES" attributeType="String"/>
         <attribute name="type" optional="YES" attributeType="String"/>
         <relationship name="attachments" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Attachment" inverseName="event" inverseEntity="Attachment"/>
-        <relationship name="pet" optional="YES" maxCount="1" deletionRule="No Action" destinationEntity="Pet" inverseName="events" inverseEntity="Pet"/>
+        <relationship name="pet" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Pet" inverseName="events" inverseEntity="Pet"/>
+        <relationship name="reminderRules" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ReminderRule" inverseName="event" inverseEntity="ReminderRule"/>
     </entity>
 </model>

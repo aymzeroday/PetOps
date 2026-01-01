@@ -27,6 +27,10 @@ struct TimelineEventDetailView: View {
             Section("Attachments") {
                 EventAttachmentsView(event: event)
             }
+            
+            Section("Reminders") {
+                EventRemindersView(event: event)
+            }
         }
         .navigationTitle(event.title ?? "Event")
         .navigationBarTitleDisplayMode(.inline)
