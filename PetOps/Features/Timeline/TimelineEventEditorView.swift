@@ -6,6 +6,7 @@ struct TimelineEventEditorView: View {
     @Environment(\.dismiss) private var dismiss
 
     let pet: Pet
+    let event: TimelineEvent?
 
     @State private var type: String = "note"
     @State private var title: String = ""
@@ -26,32 +27,39 @@ struct TimelineEventEditorView: View {
                 }
 
                 Section("Notes") {
-                    TextEditor(text: $notes)
-                        .frame(minHeight: 120)
+                    TextEditor(text: $notes).frame(minHeight: 120)
                 }
             }
-            .navigationTitle("Add Event")
+            .navigationTitle(event == nil ? "Add Event" : "Edit Event")
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") { dismiss() }
-                }
+                ToolbarItem(placement: .topBarLeading) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Save") { save() }
                         .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
+            .onAppear { load() }
         }
     }
 
+    private func load() {
+        guard let e = event else { return }
+        type = e.type ?? "note"
+        title = e.title ?? ""
+        notes = e.notes ?? ""
+        eventDate = e.eventDate ?? Date()
+    }
+
     private func save() {
-        let ev = TimelineEvent(context: viewContext)
-        ev.id = UUID()
-        ev.type = type
-        ev.title = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        ev.notes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
-        ev.eventDate = eventDate
-        ev.createdAt = Date()
-        ev.pet = pet
+        let target = event ?? TimelineEvent(context: viewContext)
+        if target.id == nil { target.id = UUID() }
+        if target.createdAt == nil { target.createdAt = Date() }
+
+        target.type = type
+        target.title = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        target.notes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
+        target.eventDate = eventDate
+        target.pet = pet
 
         try? viewContext.save()
         dismiss()

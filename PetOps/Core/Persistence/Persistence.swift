@@ -15,6 +15,8 @@ struct PersistenceController {
         if let desc = container.persistentStoreDescriptions.first {
             // Optional but useful for future migrations/auditing
             desc.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)
+            desc.shouldMigrateStoreAutomatically = true
+            desc.shouldInferMappingModelAutomatically = true
         }
 
         container.loadPersistentStores { _, error in

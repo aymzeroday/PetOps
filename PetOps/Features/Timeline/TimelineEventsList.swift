@@ -9,6 +9,7 @@ struct TimelineEventsList: View {
     @FetchRequest private var events: FetchedResults<TimelineEvent>
 
     @State private var showingEditor = false
+    @State private var editingEvent: TimelineEvent?
 
     init(pet: Pet) {
         self.pet = pet
@@ -25,21 +26,39 @@ struct TimelineEventsList: View {
                 ContentUnavailableView("No events yet", systemImage: "clock", description: Text("Add your first event."))
             } else {
                 ForEach(events) { ev in
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(ev.title ?? "Untitled").font(.headline)
-                        HStack(spacing: 8) {
-                            Text((ev.type ?? "").uppercased())
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            Text(ev.eventDate ?? .now, style: .date)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                    NavigationLink {
+                        TimelineEventDetailView(event: ev)
+                    } label: {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(ev.title ?? "Untitled")
+                                .font(.headline)
+
+                            HStack(spacing: 8) {
+                                Text((ev.type ?? "").uppercased())
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+
+                                Text(ev.eventDate ?? .now, style: .date)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            if let notes = ev.notes, !notes.isEmpty {
+                                Text(notes)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(2)
+                            }
                         }
-                        if let notes = ev.notes, !notes.isEmpty {
-                            Text(notes)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(2)
+                    }
+                    .contextMenu {
+                        Button("Edit") {
+                            editingEvent = ev
+                            showingEditor = true
+                        }
+
+                        Button("Delete", role: .destructive) {
+                            deleteEvent(ev)
                         }
                     }
                 }
@@ -49,16 +68,31 @@ struct TimelineEventsList: View {
         .navigationTitle(pet.name ?? "Timeline")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button { showingEditor = true } label: { Image(systemName: "plus") }
+                Button {
+                    editingEvent = nil
+                    showingEditor = true
+                } label: {
+                    Image(systemName: "plus")
+                }
             }
         }
         .sheet(isPresented: $showingEditor) {
-            TimelineEventEditorView(pet: pet)
+            TimelineEventEditorView(pet: pet, event: editingEvent)
         }
     }
 
     private func deleteEvents(offsets: IndexSet) {
-        offsets.map { events[$0] }.forEach(viewContext.delete)
+        offsets.map { events[$0] }.forEach(deleteEvent)
         try? viewContext.save()
+    }
+
+    private func deleteEvent(_ ev: TimelineEvent) {
+        // Delete attachment files if you added Attachment entity
+        if let set = ev.attachments as? Set<Attachment> {
+            for a in set {
+                if let p = a.filePath { FileStore.shared.delete(path: p) }
+            }
+        }
+        viewContext.delete(ev)
     }
 }
