@@ -14,7 +14,7 @@ struct PetOpsApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            PetsView()
                 .environment(\.managedObjectContext, persistenceController.container.viewContext)
         }
     }
