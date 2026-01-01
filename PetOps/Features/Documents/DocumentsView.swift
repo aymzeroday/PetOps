@@ -32,7 +32,7 @@ struct DocumentsView: View {
                     .navigationTitle("Documents")
             } else {
                 DocumentsList(pet: selectedPet!, query: searchText)
-                    .id(searchText) // force predicate refresh
+                    .id(searchText)
                     .navigationTitle("Documents")
                     .toolbar {
                         ToolbarItemGroup(placement: .topBarTrailing) {
@@ -100,10 +100,12 @@ struct DocumentsView: View {
 
             let doc = Document(context: viewContext)
             doc.id = UUID()
-            doc.type = "other"
             doc.filePath = savedPath
             doc.createdAt = Date()
             doc.pet = pet
+
+            // No OCR on import (yet), so classify as other
+            doc.type = "other"
 
             try viewContext.save()
         } catch {
@@ -120,13 +122,58 @@ struct DocumentsView: View {
             let ocr = try await OCRService.shared.recognizeText(from: images)
 
             await MainActor.run {
+                // 1) Create Document
                 let doc = Document(context: viewContext)
                 doc.id = UUID()
-                doc.type = "other"
                 doc.filePath = savedPath
                 doc.ocrText = ocr
                 doc.createdAt = Date()
                 doc.pet = pet
+
+                // 2) Classify + tag
+                let cls = DocClassifier.classify(ocr: ocr)
+                doc.type = cls.kind.rawValue
+
+                // 3) Auto-create structured record (baseline)
+                switch cls.kind {
+                case .receipt:
+                    let r = DocExtractor.extractReceipt(ocr: ocr)
+                    let e = Expense(context: viewContext)
+                    e.id = UUID()
+                    e.createdAt = Date()
+                    e.expenseDate = r.date ?? Date()
+                    e.currency = r.currency ?? "KWD"
+                    e.category = "Vet"
+                    e.vendor = r.vendor ?? ""
+                    e.amount = NSDecimalNumber(decimal: r.total ?? 0)
+                    e.pet = pet
+
+                case .vaccine:
+                    let v = DocExtractor.extractVaccine(ocr: ocr)
+                    let ev = TimelineEvent(context: viewContext)
+                    ev.id = UUID()
+                    ev.createdAt = Date()
+                    ev.type = "vaccine"
+                    ev.title = v.vaccineName ?? "Vaccine"
+                    ev.eventDate = v.date ?? Date()
+                    ev.notes = "Auto-created from scanned document"
+                    ev.pet = pet
+
+                case .lab:
+                    let ev = TimelineEvent(context: viewContext)
+                    ev.id = UUID()
+                    ev.createdAt = Date()
+                    ev.type = "lab"
+                    ev.title = "Lab Results"
+                    ev.eventDate = Date()
+                    ev.notes = "Auto-created from scanned document"
+                    ev.pet = pet
+
+                case .other:
+                    break
+                }
+
+                // 4) Save once (document + any created objects)
                 try? viewContext.save()
             }
         } catch {
