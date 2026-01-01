@@ -1,21 +1,17 @@
-//
-//  PetOpsApp.swift
-//  PetOps
-//
-//  Created by Ahmad Raafat on 31/12/2025.
-//
-
 import SwiftUI
 import CoreData
 
 @main
 struct PetOpsApp: App {
     let persistenceController = PersistenceController.shared
+    @StateObject private var appState = AppState()
 
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environment(\.managedObjectContext, persistenceController.container.viewContext)
+                .environmentObject(appState)
         }
     }
 }
+

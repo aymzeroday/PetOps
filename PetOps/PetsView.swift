@@ -3,6 +3,7 @@ import CoreData
 
 struct PetsView: View {
     @Environment(\.managedObjectContext) private var viewContext
+    @EnvironmentObject private var appState: AppState
 
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \Pet.createdAt, ascending: true)],
@@ -21,15 +22,24 @@ struct PetsView: View {
                 } else {
                     ForEach(pets) { pet in
                         Button {
-                            editingPet = pet
-                            showingEditor = true
+                            appState.selectedPetID = pet.id
                         } label: {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(pet.name ?? "Unnamed")
-                                    .font(.headline)
-                                Text(pet.species ?? "")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(pet.name ?? "Unnamed").font(.headline)
+                                    Text(pet.species ?? "").font(.subheadline).foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                if appState.selectedPetID == pet.id {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundStyle(.tint)
+                                }
+                            }
+                        }
+                        .contextMenu {
+                            Button("Edit") {
+                                editingPet = pet
+                                showingEditor = true
                             }
                         }
                     }
@@ -42,9 +52,7 @@ struct PetsView: View {
                     Button {
                         editingPet = nil
                         showingEditor = true
-                    } label: {
-                        Image(systemName: "plus")
-                    }
+                    } label: { Image(systemName: "plus") }
                 }
             }
             .sheet(isPresented: $showingEditor) {
@@ -54,7 +62,13 @@ struct PetsView: View {
     }
 
     private func deletePets(offsets: IndexSet) {
-        offsets.map { pets[$0] }.forEach(viewContext.delete)
+        let deleting = offsets.map { pets[$0] }
+        deleting.forEach(viewContext.delete)
+
+        if deleting.contains(where: { $0.id == appState.selectedPetID }) {
+            appState.selectedPetID = nil
+        }
+
         try? viewContext.save()
     }
 }
