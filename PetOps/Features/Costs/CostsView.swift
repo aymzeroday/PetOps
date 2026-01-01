@@ -21,7 +21,8 @@ struct CostsView: View {
                 ContentUnavailableView("No active pet", systemImage: "checkmark.circle", description: Text("Select a pet in Pets."))
                     .navigationTitle("Costs")
             } else {
-                ExpensesListView(pet: selectedPet!)
+                ExpenseListView()
+                    .navigationTitle("Costs")
             }
         }
     }

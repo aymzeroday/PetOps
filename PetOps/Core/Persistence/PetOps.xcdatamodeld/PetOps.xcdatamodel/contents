@@ -13,6 +13,8 @@
         <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
         <attribute name="ocrText" optional="YES" attributeType="String"/>
         <attribute name="type" optional="YES" attributeType="String"/>
+        <relationship name="event" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="TimelineEvent" inverseName="sourceDocument" inverseEntity="TimelineEvent"/>
+        <relationship name="expense" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Expense" inverseName="sourceDocument" inverseEntity="Expense"/>
         <relationship name="pet" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Pet" inverseName="documents" inverseEntity="Pet"/>
     </entity>
     <entity name="Expense" representedClassName="Expense" syncable="YES" codeGenerationType="class">
@@ -26,6 +28,7 @@
         <attribute name="vendor" optional="YES" attributeType="String"/>
         <relationship name="items" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ExpenseItem" inverseName="expense" inverseEntity="ExpenseItem"/>
         <relationship name="pet" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Pet" inverseName="expenses" inverseEntity="Pet"/>
+        <relationship name="sourceDocument" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Document" inverseName="expense" inverseEntity="Document"/>
     </entity>
     <entity name="ExpenseItem" representedClassName=".ExpenseItem" syncable="YES" codeGenerationType="class">
         <attribute name="amount" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
@@ -66,5 +69,6 @@
         <relationship name="attachments" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Attachment" inverseName="event" inverseEntity="Attachment"/>
         <relationship name="pet" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Pet" inverseName="events" inverseEntity="Pet"/>
         <relationship name="reminderRules" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ReminderRule" inverseName="event" inverseEntity="ReminderRule"/>
+        <relationship name="sourceDocument" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Document" inverseName="event" inverseEntity="Document"/>
     </entity>
 </model>

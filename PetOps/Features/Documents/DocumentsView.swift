@@ -1,3 +1,5 @@
+// PetOps/Features/Documents/DocumentsView.swift
+
 import SwiftUI
 import CoreData
 import UniformTypeIdentifiers
@@ -17,7 +19,6 @@ struct DocumentsView: View {
     @State private var errorMessage: String?
     @State private var searchText: String = ""
 
-    // Atomic review state
     @State private var pendingReview: PendingReview?
 
     private var selectedPet: Pet? {
@@ -213,7 +214,7 @@ struct DocumentsView: View {
             return
         }
 
-        // Always save the Document
+        // Always save Document
         let doc = Document(context: viewContext)
         doc.id = UUID()
         doc.filePath = review.filePath
@@ -234,10 +235,14 @@ struct DocumentsView: View {
             e.currency = r.currency.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
             e.category = "Vet"
             e.vendor = r.vendor.trimmingCharacters(in: .whitespacesAndNewlines)
-            e.amount = NSDecimalNumber(decimal: total) // keep using your existing field name
+            e.amount = NSDecimalNumber(decimal: total)
             e.pet = pet
 
-            // Optional line items
+            // Link receipt -> expense
+            doc.expense = e
+            e.sourceDocument = doc
+
+            // Optional items
             for item in r.items {
                 let title = item.title.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !title.isEmpty else { continue }
@@ -253,6 +258,7 @@ struct DocumentsView: View {
 
         case .vaccine:
             guard let v = res.vaccine else { break }
+
             let ev = TimelineEvent(context: viewContext)
             ev.id = UUID()
             ev.createdAt = Date()
@@ -262,8 +268,12 @@ struct DocumentsView: View {
             ev.notes = "Created from scanned document"
             ev.pet = pet
 
+            doc.event = ev
+            ev.sourceDocument = doc
+
         case .lab:
             guard let l = res.lab else { break }
+
             let ev = TimelineEvent(context: viewContext)
             ev.id = UUID()
             ev.createdAt = Date()
@@ -272,6 +282,9 @@ struct DocumentsView: View {
             ev.eventDate = l.date
             ev.notes = "Created from scanned document"
             ev.pet = pet
+
+            doc.event = ev
+            ev.sourceDocument = doc
 
         case .other:
             break
@@ -291,7 +304,6 @@ struct DocumentsView: View {
         let hasComma = t.contains(",")
 
         var normalized = t
-
         if hasDot && hasComma {
             if let lastDot = t.lastIndex(of: "."), let lastComma = t.lastIndex(of: ",") {
                 if lastDot > lastComma {
@@ -307,7 +319,6 @@ struct DocumentsView: View {
         return Decimal(string: normalized)
     }
 
-    // Weak heuristic: grab a few "text + amount" lines
     private func parseReceiptItemDrafts(from ocr: String) -> [ReceiptItemDraft] {
         let lines = ocr
             .split(separator: "\n")
@@ -329,7 +340,6 @@ struct DocumentsView: View {
             if title.count < 3 { continue }
 
             out.append(ReceiptItemDraft(title: title, amountText: token))
-
             if out.count >= 8 { break }
         }
 

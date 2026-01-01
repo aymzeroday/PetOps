@@ -2,6 +2,8 @@ import SwiftUI
 import CoreData
 
 struct DocumentsList: View {
+    @Environment(\.managedObjectContext) private var viewContext
+
     let pet: Pet
     let query: String
 
@@ -48,16 +50,34 @@ struct DocumentsList: View {
                         DocumentDetailView(document: d)
                     } label: {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(d.type ?? "other").font(.caption).foregroundStyle(.secondary)
+                            Text((d.type ?? "other").uppercased())
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+
                             Text(URL(fileURLWithPath: d.filePath ?? "").lastPathComponent)
                                 .font(.headline)
+
                             if let dt = d.createdAt {
-                                Text(dt, style: .date).font(.caption).foregroundStyle(.secondary)
+                                Text(dt, style: .date)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
                             }
                         }
                     }
                 }
+                .onDelete(perform: delete)
             }
         }
+    }
+
+    private func delete(at offsets: IndexSet) {
+        for idx in offsets {
+            let d = docs[idx]
+            if let path = d.filePath {
+                FileStore.shared.delete(path: path)
+            }
+            viewContext.delete(d)
+        }
+        try? viewContext.save()
     }
 }

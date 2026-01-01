@@ -1,3 +1,5 @@
+// PetOps/Features/Costs/ExpenseEditorView.swift
+
 import SwiftUI
 import CoreData
 
@@ -5,78 +7,162 @@ struct ExpenseEditorView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.dismiss) private var dismiss
 
-    let pet: Pet
-    let expense: Expense?
+    @ObservedObject var expense: Expense
 
-    @State private var amountText: String = ""
-    @State private var currency: String = "KWD"
-    @State private var category: String = "Vet"
     @State private var vendor: String = ""
+    @State private var category: String = "Vet"
+    @State private var currency: String = "KWD"
+    @State private var totalAmountText: String = ""
     @State private var date: Date = Date()
 
-    private let categories = ["Vet", "Medication", "Food", "Litter", "Grooming", "Other"]
-
     var body: some View {
-        NavigationStack {
-            Form {
-                Section("Amount") {
-                    TextField("Amount", text: $amountText)
-                        .keyboardType(.decimalPad)
+        Form {
+            Section("Cost") {
+                TextField("Vendor", text: $vendor)
+                TextField("Category", text: $category)
+                TextField("Currency", text: $currency)
+                    .textInputAutocapitalization(.characters)
 
-                    TextField("Currency", text: $currency)
-                        .textInputAutocapitalization(.characters)
+                TextField("Total Amount", text: $totalAmountText)
+                    .keyboardType(.decimalPad)
 
-                    Picker("Category", selection: $category) {
-                        ForEach(categories, id: \.self) { Text($0).tag($0) }
+                DatePicker("Date", selection: $date, displayedComponents: .date)
+            }
+
+            Section("Line Items") {
+                if itemsArray.isEmpty {
+                    Text("No line items. Add items when the receipt contains multiple services.")
+                        .foregroundStyle(.secondary)
+                }
+
+                ForEach(itemsArray) { item in
+                    LineItemRow(item: item)
+                }
+                .onDelete(perform: deleteItems)
+
+                Button("Add Line Item") { addItem() }
+            }
+
+            if let doc = expense.sourceDocument {
+                Section("Source Document") {
+                    NavigationLink {
+                        DocumentDetailView(document: doc)
+                    } label: {
+                        Text("Open scanned document")
                     }
                 }
-
-                Section("Details") {
-                    TextField("Vendor (optional)", text: $vendor)
-                    DatePicker("Date", selection: $date, displayedComponents: .date)
-                }
             }
-            .navigationTitle(expense == nil ? "Add Expense" : "Edit Expense")
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) { Button("Cancel") { dismiss() } }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Save") { save() }.disabled(parsedAmount == nil)
-                }
-            }
-            .onAppear { load() }
         }
+        .navigationTitle("Cost")
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button("Close") { dismiss() }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Save") {
+                    save()
+                    dismiss()
+                }
+            }
+        }
+        .onAppear { load() }
     }
 
-    private var parsedAmount: Decimal? {
-        let s = amountText.replacingOccurrences(of: ",", with: ".")
-        return Decimal(string: s)
+    private var itemsArray: [ExpenseItem] {
+        let set = expense.items as? Set<ExpenseItem> ?? []
+        return set.sorted { ($0.createdAt ?? .distantPast) < ($1.createdAt ?? .distantPast) }
     }
 
     private func load() {
-        guard let e = expense else { return }
-        let amt = (e.amount as Decimal?) ?? 0
-        amountText = NSDecimalNumber(decimal: amt).stringValue
-        currency = e.currency ?? "KWD"
-        category = e.category ?? "Vet"
-        vendor = e.vendor ?? ""
-        date = e.expenseDate ?? Date()
+        vendor = expense.vendor ?? ""
+        category = expense.category ?? "Vet"
+        currency = (expense.currency ?? "KWD").uppercased()
+        totalAmountText = (expense.amount ?? 0).stringValue
+        date = expense.expenseDate ?? Date()
     }
 
     private func save() {
-        guard let amt = parsedAmount else { return }
+        expense.vendor = vendor.trimmingCharacters(in: .whitespacesAndNewlines)
+        expense.category = category.trimmingCharacters(in: .whitespacesAndNewlines)
+        expense.currency = currency.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        expense.expenseDate = date
 
-        let e = expense ?? Expense(context: viewContext)
-        if e.id == nil { e.id = UUID() }
-        if e.createdAt == nil { e.createdAt = Date() }
-
-        e.amount = amt as NSDecimalNumber
-        e.currency = currency.trimmingCharacters(in: .whitespacesAndNewlines)
-        e.category = category
-        e.vendor = vendor.trimmingCharacters(in: .whitespacesAndNewlines)
-        e.expenseDate = date
-        e.pet = pet
+        if let d = parseDecimal(totalAmountText) {
+            expense.amount = NSDecimalNumber(decimal: d)
+        }
 
         try? viewContext.save()
-        dismiss()
+    }
+
+    private func addItem() {
+        let it = ExpenseItem(context: viewContext)
+        it.id = UUID()
+        it.createdAt = Date()
+        it.title = ""
+        it.amount = 0
+        it.expense = expense
+        try? viewContext.save()
+    }
+
+    private func deleteItems(at offsets: IndexSet) {
+        let arr = itemsArray
+        for idx in offsets {
+            viewContext.delete(arr[idx])
+        }
+        try? viewContext.save()
+    }
+
+    private func parseDecimal(_ s: String) -> Decimal? {
+        let t = s.trimmingCharacters(in: .whitespacesAndNewlines)
+        if t.isEmpty { return nil }
+
+        let hasDot = t.contains(".")
+        let hasComma = t.contains(",")
+
+        var normalized = t
+        if hasDot && hasComma {
+            if let lastDot = t.lastIndex(of: "."), let lastComma = t.lastIndex(of: ",") {
+                if lastDot > lastComma {
+                    normalized = t.replacingOccurrences(of: ",", with: "")
+                } else {
+                    normalized = t.replacingOccurrences(of: ".", with: "").replacingOccurrences(of: ",", with: ".")
+                }
+            }
+        } else if hasComma && !hasDot {
+            normalized = t.replacingOccurrences(of: ",", with: ".")
+        }
+
+        return Decimal(string: normalized)
+    }
+}
+
+private struct LineItemRow: View {
+    @Environment(\.managedObjectContext) private var viewContext
+    @ObservedObject var item: ExpenseItem
+
+    @State private var title: String = ""
+    @State private var amountText: String = ""
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            TextField("Item title", text: $title)
+            TextField("Item amount", text: $amountText)
+                .keyboardType(.decimalPad)
+        }
+        .padding(.vertical, 6)
+        .onAppear {
+            title = item.title ?? ""
+            amountText = (item.amount ?? 0).stringValue
+        }
+        .onChange(of: title) { _, _ in persist() }
+        .onChange(of: amountText) { _, _ in persist() }
+    }
+
+    private func persist() {
+        item.title = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let d = Decimal(string: amountText.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: ",", with: ".")) {
+            item.amount = NSDecimalNumber(decimal: d)
+        }
+        try? viewContext.save()
     }
 }
