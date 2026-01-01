@@ -33,7 +33,7 @@
 		8BC80E0A2F05021100B177DB /* Exceptions for "PetOps" folder in "PetOps" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Info.plist,
+				Resources/Info.plist,
 			);
 			target = 8BC80DE32F05021000B177DB /* PetOps */;
 		};
@@ -293,7 +293,7 @@
 				DEVELOPMENT_TEAM = 4CQ4U68PPC;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = PetOps/Info.plist;
+				INFOPLIST_FILE = PetOps/Resources/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -327,7 +327,7 @@
 				DEVELOPMENT_TEAM = 4CQ4U68PPC;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = PetOps/Info.plist;
+				INFOPLIST_FILE = PetOps/Resources/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
